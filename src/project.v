@@ -59,9 +59,9 @@ module tt_um_rebeccargb_dipped (
         d1_out <= d1_in;
         d0_out <= d0_in;
       end else begin
-        d2_out <= bin_in_d2;
-        d1_out <= bin_in_d1;
-        d0_out <= bin_in_d0;
+        d2_out <= bin_in_d2[3:0];
+        d1_out <= bin_in_d1[3:0];
+        d0_out <= bin_in_d0[3:0];
       end
     end
   end
