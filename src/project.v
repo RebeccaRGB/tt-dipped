@@ -39,8 +39,6 @@ module tt_um_rebeccargb_dipped (
   wire [9:0] dpd_out; dpd_pack dp(.d2(d2_out), .d1(d1_out), .d0(d0_out), .dpd(dpd_out));
   wire [9:0] bin_out = {6'd0, d2_out} * 10'd100 + {6'd0, d1_out} * 10'd10 + {6'd0, d0_out};
 
-  wire we = ui_in[7];
-  wire oe = ui_in[6];
   wire dpd_sel = ui_in[5];
   wire bcd_sel = ui_in[4];
 
@@ -49,7 +47,7 @@ module tt_um_rebeccargb_dipped (
       d2_out <= 0;
       d1_out <= 0;
       d0_out <= 0;
-    end else if (~we) begin
+    end else if (~ui_in[7]) begin
       if (dpd_sel) begin
         d2_out <= dpd_in_d2;
         d1_out <= dpd_in_d1;
@@ -73,7 +71,7 @@ module tt_um_rebeccargb_dipped (
   assign uo_out[4] = (d0_out >= 10);
   assign uo_out[3:0] = dpd_sel ? {2'b0, dpd_out[9:8]} : bcd_sel ? d2_out : {2'b0, bin_out[9:8]};
   assign uio_out = dpd_sel ? dpd_out[7:0] : bcd_sel ? {d1_out, d0_out} : bin_out[7:0];
-  assign uio_oe = {8{~oe}};
+  assign uio_oe = {8{~ui_in[6]}};
 
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, bin_in_d2[9:4], bin_in_d1[9:4], bin_in_d0[9:4], 1'b0};
