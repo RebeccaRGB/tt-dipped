@@ -76,6 +76,6 @@ module tt_um_rebeccargb_dipped (
   assign uio_oe = {8{~oe}};
 
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, 1'b0};
+  wire _unused = &{ena, bin_in_d2[9:4], bin_in_d1[9:4], bin_in_d0[9:4], 1'b0};
 
 endmodule
