@@ -15,17 +15,20 @@ module dpd_pack (
 	wire H = d0[2];
 	wire I = d0[1];
 
-	wire a = A & E & G | A & H | B;
-	wire b = A & F & G | A & I | C;
-	wire c = d2[0];
-	wire d = ~A & D & H | ~A & E | D & G | E & ~G;
-	wire e = A & G | ~A & D & I | F;
-	wire f = d1[0];
-	wire g = A | D | G;
-	wire h = A | D & G | ~D & H;
-	wire i = A & G | ~A & I | D;
-	wire j = d0[0];
+	wire dpd_a = A & E & G | A & H | B;
+	wire dpd_b = A & F & G | A & I | C;
+	wire dpd_c = d2[0];
+	wire dpd_d = ~A & D & H | ~A & E | D & G | E & ~G;
+	wire dpd_e = A & G | ~A & D & I | F;
+	wire dpd_f = d1[0];
+	wire dpd_g = A | D | G;
+	wire dpd_h = A | D & G | ~D & H;
+	wire dpd_i = A & G | ~A & I | D;
+	wire dpd_j = d0[0];
 
-	assign dpd = {a, b, c, d, e, f, g, h, i, j};
+	assign dpd = {
+		dpd_a, dpd_b, dpd_c, dpd_d, dpd_e,
+		dpd_f, dpd_g, dpd_h, dpd_i, dpd_j
+	};
 
 endmodule

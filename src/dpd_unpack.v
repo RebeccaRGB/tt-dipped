@@ -16,18 +16,18 @@ module dpd_unpack (
 	wire i = dpd[1];
 	wire j = dpd[0];
 
-	wire A = (~d & g & h) | (e & g & h) | (g & h & ~i);
-	wire B = (a & d & ~e & i) | (a & ~g) | (a & ~h);
-	wire C = (b & d & ~e & i) | (b & ~g) | (b & ~h);
-	wire D = (d & g & i) | (~e & g & i) | (g & ~h & i);
-	wire E = (a & ~d & e & g & h & i) | (d & ~g) | (d & ~i);
-	wire F = (b & ~d & e & h) | (e & ~g) | (e & ~i);
-	wire G = (d & g & h & i) | (e & g & h & i) | (g & ~h & ~i);
-	wire H = (a & ~d & ~e & h) | (a & h & ~i) | (d & g & ~h & i) | (~g & h);
-	wire I = (b & ~d & ~e & h & i) | (b & g & h & ~i) | (e & ~h & i) | (~g & i);
+	wire bcd_A = (~d & g & h) | (e & g & h) | (g & h & ~i);
+	wire bcd_B = (a & d & ~e & i) | (a & ~g) | (a & ~h);
+	wire bcd_C = (b & d & ~e & i) | (b & ~g) | (b & ~h);
+	wire bcd_D = (d & g & i) | (~e & g & i) | (g & ~h & i);
+	wire bcd_E = (a & ~d & e & g & h & i) | (d & ~g) | (d & ~i);
+	wire bcd_F = (b & ~d & e & h) | (e & ~g) | (e & ~i);
+	wire bcd_G = (d & g & h & i) | (e & g & h & i) | (g & ~h & ~i);
+	wire bcd_H = (a & ~d & ~e & h) | (a & h & ~i) | (d & g & ~h & i) | (~g & h);
+	wire bcd_I = (b & ~d & ~e & h & i) | (b & g & h & ~i) | (e & ~h & i) | (~g & i);
 
-	assign d2 = {A, B, C, c};
-	assign d1 = {D, E, F, f};
-	assign d0 = {G, H, I, j};
+	assign d2 = {bcd_A, bcd_B, bcd_C, c};
+	assign d1 = {bcd_D, bcd_E, bcd_F, f};
+	assign d0 = {bcd_G, bcd_H, bcd_I, j};
 
 endmodule
