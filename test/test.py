@@ -28,24 +28,51 @@ async def test_project(dut):
     MODE_BIN = 0x00
     MODE_BCD = 0x10
     MODE_DPD = 0x20
+    MODE_WR = 0x40
+    MODE_RD = 0x80
 
     ERR_OK = 0x00
     ERR_D2 = 0xC0
     ERR_D1 = 0xA0
     ERR_D0 = 0x90
+    ERR_BV = 0x10
+
+    AS_OUT_BCD = 0x80
+    AS_OUT_DPD = 0x40
+    AS_OUT_BIN = 0x00
+    AS_OUT_A0 = 0x20
+    AS_IN_BCD = 0x10
+    AS_IN_DPD = 0x08
+    AS_IN_BIN = 0x00
 
     async def write(mode, b):
+        dut.rst_n.value = 1
         dut.uio_in.value = b & 0xFF
-        dut.ui_in.value = 0x40 | mode | (b >> 8)
+        dut.ui_in.value = MODE_WR | mode | (b >> 8)
         await ClockCycles(dut.clk, 1)
 
     async def read(mode, b, err=None):
+        dut.rst_n.value = 1
         dut.uio_in.value = 0
-        dut.ui_in.value = 0x80 | mode
+        dut.ui_in.value = MODE_RD | mode
         await ClockCycles(dut.clk, 1)
         if b is not None:
             assert dut.uio_out.value == (b & 0xFF)
             assert (dut.uo_out.value & 0x0F) == (b >> 8)
+        if err is not None:
+            assert (dut.uo_out.value & 0xF0) == err
+
+    async def awr(mode, inb, outb, err=None):
+        dut.rst_n.value = 0
+        dut.uio_in.value = inb & 0xFF
+        dut.ui_in.value = mode | (inb >> 8)
+        await ClockCycles(dut.clk, 1)
+        if outb is not None:
+            assert dut.uo_out.value == (outb & 0xFF)
+        dut.ui_in.value = AS_OUT_A0 | mode | (inb >> 8)
+        await ClockCycles(dut.clk, 1)
+        if outb is not None:
+            assert (dut.uo_out.value & 0x0F) == (outb >> 8)
         if err is not None:
             assert (dut.uo_out.value & 0xF0) == err
 
@@ -141,55 +168,71 @@ async def test_project(dut):
     for b in range(0, 1024):
         await write(MODE_BIN, b)
         await read(MODE_BIN, b % 1000, ERR_OK)
+        await awr(AS_IN_BIN|AS_OUT_BIN, b, b % 1000, ERR_OK if b < 1000 else ERR_BV)
 
     # Binary to BCD
     for b in range(0, 1024):
+        bcd = int(str(b % 1000), 16)
         await write(MODE_BIN, b)
-        await read(MODE_BCD, int(str(b % 1000), 16), ERR_OK)
+        await read(MODE_BCD, bcd, ERR_OK)
+        await awr(AS_IN_BIN|AS_OUT_BCD, b, bcd, ERR_OK if b < 1000 else ERR_BV)
 
     # Binary to DPD
     for b in range(0, 1024):
+        dpd = BIN2DPD[b % 1000]
         await write(MODE_BIN, b)
-        await read(MODE_DPD, BIN2DPD[b % 1000], ERR_OK)
+        await read(MODE_DPD, dpd, ERR_OK)
+        await awr(AS_IN_BIN|AS_OUT_DPD, b, dpd, ERR_OK if b < 1000 else ERR_BV)
 
     # BCD to binary
     for d2 in range(0, 16):
         for d1 in range(0, 16):
             for d0 in range(0, 16):
-                await write(MODE_BCD, (d2 << 8) | (d1 << 4) | d0)
+                bcd = (d2 << 8) | (d1 << 4) | d0
                 b = (d2 * 100 + d1 * 10 + d0) if (d2 < 10 and d1 < 10 and d0 < 10) else None
                 e = (ERR_OK if d2 < 10 else ERR_D2) | (ERR_OK if d1 < 10 else ERR_D1) | (ERR_OK if d0 < 10 else ERR_D0)
+                await write(MODE_BCD, bcd)
                 await read(MODE_BIN, b, e)
+                await awr(AS_IN_BCD|AS_OUT_BIN, bcd, b, e)
 
     # BCD to BCD
     for d2 in range(0, 16):
         for d1 in range(0, 16):
             for d0 in range(0, 16):
-                await write(MODE_BCD, (d2 << 8) | (d1 << 4) | d0)
+                bcd = (d2 << 8) | (d1 << 4) | d0
                 b = ((d2 << 8) | (d1 << 4) | d0) if (d2 < 10 and d1 < 10 and d0 < 10) else None
                 e = (ERR_OK if d2 < 10 else ERR_D2) | (ERR_OK if d1 < 10 else ERR_D1) | (ERR_OK if d0 < 10 else ERR_D0)
+                await write(MODE_BCD, bcd)
                 await read(MODE_BCD, b, e)
+                await awr(AS_IN_BCD|AS_OUT_BCD, bcd, b, e)
 
     # BCD to DPD
     for d2 in range(0, 16):
         for d1 in range(0, 16):
             for d0 in range(0, 16):
-                await write(MODE_BCD, (d2 << 8) | (d1 << 4) | d0)
+                bcd = (d2 << 8) | (d1 << 4) | d0
                 b = BIN2DPD[d2 * 100 + d1 * 10 + d0] if (d2 < 10 and d1 < 10 and d0 < 10) else None
                 e = (ERR_OK if d2 < 10 else ERR_D2) | (ERR_OK if d1 < 10 else ERR_D1) | (ERR_OK if d0 < 10 else ERR_D0)
+                await write(MODE_BCD, bcd)
                 await read(MODE_DPD, b, e)
+                await awr(AS_IN_BCD|AS_OUT_DPD, bcd, b, e)
 
     # DPD to binary
     for b in range(0, 1024):
         await write(MODE_DPD, b)
         await read(MODE_BIN, DPD2BIN[b], ERR_OK)
+        await awr(AS_IN_DPD|AS_OUT_BIN, b, DPD2BIN[b], ERR_OK)
 
     # DPD to BCD
     for b in range(0, 1024):
+        bcd = int(str(DPD2BIN[b]), 16)
         await write(MODE_DPD, b)
-        await read(MODE_BCD, int(str(DPD2BIN[b]), 16), ERR_OK)
+        await read(MODE_BCD, bcd, ERR_OK)
+        await awr(AS_IN_DPD|AS_OUT_BCD, b, bcd, ERR_OK)
 
     # DPD to DPD
     for b in range(0, 1024):
+        dpd = ((b & 0xFF) if ((b & 0x6E) == 0x6E) else b)
         await write(MODE_DPD, b)
-        await read(MODE_DPD, ((b & 0xFF) if ((b & 0x6E) == 0x6E) else b), ERR_OK)
+        await read(MODE_DPD, dpd, ERR_OK)
+        await awr(AS_IN_DPD|AS_OUT_DPD, b, dpd, ERR_OK)
